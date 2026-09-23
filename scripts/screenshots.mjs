@@ -31,20 +31,33 @@ await shot('1-matchup');
 await page.click('text=My Team');
 await page.waitForSelector('text=Forwards');
 await shot('2-team');
+await page.locator('.section').filter({ hasText: 'Forwards' }).locator('.row').nth(1).click();
+await page.waitForSelector('.menu');
+await shot('2b-menu');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
 
 await page.click('.tab >> text=Players');
 await page.waitForSelector('text=Free Agents');
 await page.waitForSelector('.section .row .points');
 await shot('3-players');
+await page.mouse.wheel(0, 900);
+await page.waitForTimeout(400);
+await shot('3b-players-scrolled');
+await page.evaluate(() => window.scrollTo(0, 0));
 await page.locator('.section .row').first().click();
 await page.waitForSelector('.sheet .stat-grid');
 await shot('4-player-sheet');
-await page.click('.sheet >> text=Done');
+await page.click('.sheet [aria-label="Close"]');
 await page.waitForTimeout(400);
 
 await page.click('.tab >> text=Trades');
 await page.waitForSelector('text=Offers for You');
 await shot('5-trades');
+await page.click('.trade-actions button:text-is("Accept")');
+await page.waitForSelector('.alert');
+await shot('5b-alert');
+await page.click('.alert-actions button:text-is("Cancel")');
 
 await page.click('.tab >> text=League');
 await page.waitForSelector('text=Standings');

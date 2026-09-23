@@ -164,3 +164,44 @@ export const IconArrowCircle = ({ size = 18, ...p }: P) => (
     <path d="M20 4v4.5h-4.5" />
   </svg>
 );
+
+export const IconXmark = ({ size = 18, ...p }: P) => (
+  <svg {...base(size, { strokeWidth: 2.4, ...p })}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+);
+
+export const IconInfo = ({ size = 20, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v6" />
+    <circle cx="12" cy="7.6" r="0.6" fill="currentColor" />
+  </svg>
+);
+
+export const IconTrash = ({ size = 20, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l1 13h9l1-13M10 10.5v6M14 10.5v6" />
+  </svg>
+);
+
+export const IconArrowUp = ({ size = 20, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 16.5v-9M8 11l4-4 4 4" />
+  </svg>
+);
+
+export const IconArrowDown = ({ size = 20, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7.5v9M8 13l4 4 4-4" />
+  </svg>
+);
+
+export const IconPersonPlus = ({ size = 20, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <circle cx="10" cy="8" r="3.8" />
+    <path d="M3 20c0-3.7 3.1-6.2 7-6.2 1.4 0 2.7.3 3.8.9M18.5 14v6M15.5 17h6" />
+  </svg>
+);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PlayerAvatar, GameChip, TeamAvatar } from '../components/avatars';
-import { IconArrows } from '../components/icons';
+import { IconArrowDown, IconArrows, IconArrowUp, IconInfo, IconSwap } from '../components/icons';
 import { useUI } from '../components/overlays';
 import { ErrorNote, Page, Row, Section, Spinner } from '../components/ui';
 import {
@@ -44,28 +44,36 @@ export function TeamScreen() {
   const { lineup, roster_max } = state.league.settings;
 
   // Tap a player on your own team: quick lineup moves, like the iOS context menu.
-  const onPlayerTap = async (r: RosterEntry) => {
+  const onPlayerTap = async (r: RosterEntry, anchor: Element) => {
     if (!mine) return setPlayer(r.player_id);
     const slots = eligibleSlots(r.pos).filter((s) => s !== r.slot);
     const choice = await ui.actionSheet<Slot | 'info' | 'swap'>({
       title: r.player_name,
       message: `${POS_NAMES[r.pos]} · ${r.nhl_team ?? ''} · ${SLOT_NAMES[r.slot]}`,
+      anchor,
       actions: [
-        ...slots.map((s) => ({ label: s === 'BN' ? 'Move to Bench' : `Move to ${SLOT_NAMES[s]}`, value: s })),
-        ...(r.slot !== 'BN' ? [] : [{ label: 'Swap with a Starter…', value: 'swap' as const }]),
-        { label: 'Player Card', value: 'info' as const },
+        ...slots.map((s) => ({
+          label: s === 'BN' ? 'Move to Bench' : `Move to ${SLOT_NAMES[s]}`,
+          value: s,
+          icon: s === 'BN' ? <IconArrowDown /> : <IconArrowUp />,
+        })),
+        ...(r.slot !== 'BN' ? [] : [{ label: 'Swap with a Starter…', value: 'swap' as const, icon: <IconSwap size={20} /> }]),
+        { label: 'Player Card', value: 'info' as const, icon: <IconInfo />, divider: true },
       ],
     });
     if (!choice) return;
     if (choice === 'info') return setPlayer(r.player_id);
-    if (choice === 'swap') return swapIn(r);
+    if (choice === 'swap') return swapIn(r, anchor);
     const used = roster.filter((x) => x.slot === choice).length;
     if (choice !== 'BN' && used >= lineup[choice]) {
       // Slot full: offer to bench someone in it.
       const out = await ui.actionSheet({
         title: `${SLOT_NAMES[choice]} is full`,
         message: `Who should go to the bench for ${r.player_name}?`,
-        actions: roster.filter((x) => x.slot === choice).map((x) => ({ label: x.player_name, value: x })),
+        anchor,
+        actions: roster
+          .filter((x) => x.slot === choice)
+          .map((x) => ({ label: x.player_name, value: x, icon: <IconArrowDown /> })),
       });
       if (!out) return;
       if ((await run('set_lineup_slot', { p_league: state.league.id, p_player_id: out.player_id, p_slot: 'BN' })) === undefined) return;
@@ -73,11 +81,12 @@ export function TeamScreen() {
     await run('set_lineup_slot', { p_league: state.league.id, p_player_id: r.player_id, p_slot: choice }, 'Lineup updated');
   };
 
-  const swapIn = async (r: RosterEntry) => {
+  const swapIn = async (r: RosterEntry, anchor: Element) => {
     const targets = roster.filter((x) => x.slot !== 'BN' && eligibleSlots(r.pos).includes(x.slot));
     const out = await ui.actionSheet({
       title: `Start ${r.player_name} instead of…`,
-      actions: targets.map((x) => ({ label: `${x.player_name} (${x.slot})`, value: x })),
+      anchor,
+      actions: targets.map((x) => ({ label: `${x.player_name} (${x.slot})`, value: x, icon: <IconSwap size={20} /> })),
     });
     if (!out) return;
     const moved = await run('set_lineup_slot', { p_league: state.league.id, p_player_id: out.player_id, p_slot: 'BN' });
@@ -133,7 +142,7 @@ export function TeamScreen() {
                 <Row
                   key={r.player_id}
                   leadingKind="slot"
-                  onClick={() => onPlayerTap(r)}
+                  onClick={(e) => onPlayerTap(r, e.currentTarget)}
                   leading={
                     <>
                       <span className="slot-tag">{slot === 'BN' ? POS_NAMES[r.pos] : slot}</span>

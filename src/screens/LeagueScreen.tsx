@@ -5,7 +5,7 @@ import { roundRobinSchedule } from '../../shared/schedule';
 import { GOALIE_STATS, SKATER_STATS, STAT_LABELS, type StatKey } from '../../shared/scoring';
 import { TeamAvatar } from '../components/avatars';
 import {
-  IconArrowCircle, IconCalendar, IconList, IconPerson, IconShare, IconSliders, IconStar, IconTicket,
+  IconArrowCircle, IconCalendar, IconPlus, IconList, IconPerson, IconShare, IconSliders, IconStar, IconTicket,
 } from '../components/icons';
 import { useUI } from '../components/overlays';
 import { ErrorNote, Page, Row, RowIcon, Section, Spinner } from '../components/ui';
@@ -48,12 +48,13 @@ export function LeagueScreen() {
     }
   };
 
-  const switchLeague = async () => {
+  const switchLeague = async (anchor: Element) => {
     const choice = await ui.actionSheet({
       title: 'Your Leagues',
+      anchor,
       actions: [
-        ...leagues.map((l) => ({ label: l.name, value: l.id, disabled: l.id === state.league.id })),
-        { label: 'Create or Join a League…', value: '__new' },
+        ...leagues.map((l) => ({ label: l.name, value: l.id, checked: l.id === state.league.id })),
+        { label: 'Create or Join a League…', value: '__new', divider: true, icon: <IconPlus size={20} /> },
       ],
     });
     if (choice === '__new') navigate('/welcome');
@@ -114,7 +115,7 @@ export function LeagueScreen() {
       </Section>
 
       <Section header="Account" footer={backend.mode === 'demo' ? 'Demo mode: data is fictional and stays on this device.' : user?.email ?? undefined}>
-        <Row leadingKind="icon" leading={<RowIcon color="var(--blue)"><IconArrowCircle /></RowIcon>} title="Switch League" detail={leagues.length > 1 ? leagues.length : undefined} onClick={switchLeague} />
+        <Row leadingKind="icon" leading={<RowIcon color="var(--blue)"><IconArrowCircle /></RowIcon>} title="Switch League" detail={leagues.length > 1 ? leagues.length : undefined} onClick={(e) => switchLeague(e.currentTarget)} />
         {backend.demo && <DemoRows />}
         {backend.mode === 'supabase' && (
           <Row
@@ -144,13 +145,14 @@ function DemoRows() {
         leading={<RowIcon color="var(--green)"><IconPerson /></RowIcon>}
         title="Play as Team"
         detail={current?.team}
-        onClick={async () => {
+        onClick={async (e) => {
           const uid = await ui.actionSheet({
             title: 'Play as another team',
             message: 'Try both sides of a trade in the demo.',
-            actions: demo.users.map((u) => ({ label: u.team, value: u.id, disabled: u.id === demo.currentUid() })),
+            anchor: e.currentTarget,
+            actions: demo.users.map((u) => ({ label: u.team, value: u.id, checked: u.id === demo.currentUid() })),
           });
-          if (uid) {
+          if (uid && uid !== demo.currentUid()) {
             demo.actAs(uid);
             setLeagueId(null);
           }
@@ -221,14 +223,15 @@ export function PicksPage() {
   const ui = useUI();
   if (!state) return fallback;
   const seasons = [...new Set(state.picks.map((p) => p.season))].sort();
-  const reassign = async (pickId: string) => {
+  const reassign = async (pickId: string, owner: string, anchor: Element) => {
     if (!state.me.is_commissioner) return;
     const team = await ui.actionSheet({
       title: 'Give this pick to…',
       message: 'Commissioner override',
-      actions: state.teams.map((t) => ({ label: t.name, value: t.id })),
+      anchor,
+      actions: state.teams.map((t) => ({ label: t.name, value: t.id, checked: t.id === owner })),
     });
-    if (team) await run('commish_reassign_pick', { p_league: state.league.id, p_pick: pickId, p_team: team }, 'Pick updated');
+    if (team && team !== owner) await run('commish_reassign_pick', { p_league: state.league.id, p_pick: pickId, p_team: team }, 'Pick updated');
   };
   return (
     <Page title="Draft Picks" back="/league">
@@ -249,7 +252,7 @@ export function PicksPage() {
                 leading={<TeamAvatar state={state} teamId={p.owner_team_id} size="sm" />}
                 title={teamName(state, p.owner_team_id)}
                 subtitle={pickLabel(state, p).replace(`${season} `, '')}
-                onClick={state.me.is_commissioner ? () => reassign(p.id) : undefined}
+                onClick={state.me.is_commissioner ? (e) => reassign(p.id, p.owner_team_id, e.currentTarget) : undefined}
               />
             ))}
         </Section>

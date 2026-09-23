@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { addDays, formatSeason, previousSeason } from '../../shared/dates';
 import { fantasyPoints, GOALIE_STATS, type StatKey, type StatLine } from '../../shared/scoring';
 import { PlayerAvatar, TeamLogo } from '../components/avatars';
+import { IconPersonPlus, IconTrash } from '../components/icons';
 import { Sheet, useUI } from '../components/overlays';
 import { Row, Section, Spinner } from '../components/ui';
 import { eligibleSlots, formatPoints, ownerOf, perGame, POS_NAMES, rosterOf, shortDate, SLOT_NAMES, teamName } from '../lib/league';
@@ -68,15 +69,21 @@ function PlayerDetail({ playerId, onClose }: { playerId: number; onClose: () => 
   const scoring = state.league.settings.scoring;
   const info = { id: playerId, name, pos, team: nhlTeam };
 
-  const addPlayer = async () => {
+  const addPlayer = async (anchor: Element) => {
     const myRoster = rosterOf(state, state.me.team_id);
     if (myRoster.length >= state.league.settings.roster_max) {
       const drop = await ui.actionSheet({
         title: 'Your roster is full',
         message: `Choose a player to drop for ${name}.`,
+        anchor,
         actions: [...myRoster]
           .sort((a, b) => a.player_name.localeCompare(b.player_name))
-          .map((r) => ({ label: `${r.player_name} (${POS_NAMES[r.pos]})`, value: r.player_id, destructive: true })),
+          .map((r) => ({
+            label: `${r.player_name} (${POS_NAMES[r.pos]})`,
+            value: r.player_id,
+            destructive: true,
+            icon: <IconTrash />,
+          })),
       });
       if (drop == null) return;
       const ok = await run('add_player', { p_league: state.league.id, p_player: info, p_drop_player_id: drop }, `Added ${name}`);
@@ -102,10 +109,17 @@ function PlayerDetail({ playerId, onClose }: { playerId: number; onClose: () => 
   const moveSlot = (slot: Slot) =>
     run('set_lineup_slot', { p_league: state.league.id, p_player_id: playerId, p_slot: slot }, `Moved to ${SLOT_NAMES[slot]}`);
 
-  const assign = async () => {
+  const assign = async (anchor: Element) => {
     const team = await ui.actionSheet({
       title: `Assign ${name} to…`,
-      actions: state.teams.map((t) => ({ label: t.name, value: t.id, disabled: t.id === owner })),
+      anchor,
+      actions: state.teams.map((t) => ({
+        label: t.name,
+        value: t.id,
+        checked: t.id === owner,
+        disabled: t.id === owner,
+        icon: <IconPersonPlus />,
+      })),
     });
     if (team) await run('commish_assign_player', { p_league: state.league.id, p_team: team, p_player: info }, 'Player assigned');
   };
@@ -145,7 +159,7 @@ function PlayerDetail({ playerId, onClose }: { playerId: number; onClose: () => 
 
       <div className="pad" style={{ marginBottom: 28 }}>
         {!owner && (
-          <button className="btn" onClick={addPlayer}>
+          <button className="btn" onClick={(e) => addPlayer(e.currentTarget)}>
             Add Player
           </button>
         )}
@@ -202,7 +216,7 @@ function PlayerDetail({ playerId, onClose }: { playerId: number; onClose: () => 
 
       {(mine || state.me.is_commissioner) && (
         <Section header={mine ? undefined : 'Commissioner'}>
-          {state.me.is_commissioner && <Row title="Assign to Team…" variant="action" onClick={assign} />}
+          {state.me.is_commissioner && <Row title="Assign to Team…" variant="action" onClick={(e) => assign(e.currentTarget)} />}
           {state.me.is_commissioner && owner && !mine && <Row title="Release from Team" variant="destructive" onClick={release} />}
           {mine && <Row title="Drop Player" variant="destructive" onClick={dropPlayer} />}
         </Section>

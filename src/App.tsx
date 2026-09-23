@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { IconArrows, IconJersey, IconPeople, IconRink, IconTrophy } from './components/icons';
@@ -15,9 +16,28 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 15_000 } },
 });
 
+/** Shrinks the floating tab bar while scrolling down, and restores it on the way back up. */
+function useMinimizeOnScroll(pathname: string) {
+  const [min, setMin] = useState(false);
+  useEffect(() => {
+    setMin(false);
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - last) < 8) return;
+      setMin(y > last && y > 120);
+      last = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname]);
+  return min;
+}
+
 function TabBar() {
   const { data: state } = useLeague();
   const { pathname } = useLocation();
+  const min = useMinimizeOnScroll(pathname);
   if (pathname.startsWith('/trades/new') || pathname.startsWith('/welcome')) return null;
   const incoming = state?.trades.filter((t) => t.status === 'pending' && t.recipient_team_id === state.me.team_id).length ?? 0;
   const tabs = [
@@ -28,7 +48,7 @@ function TabBar() {
     { to: '/league', label: 'League', icon: <IconTrophy />, match: (p: string) => p.startsWith('/league') || p.startsWith('/teams') },
   ];
   return (
-    <nav className="tabbar" aria-label="Main">
+    <nav className={`tabbar ${min ? 'min' : ''}`} aria-label="Main">
       <div className="tabbar-inner">
         {tabs.map((t) => (
           <NavLink key={t.to} to={t.to} className={`tab ${t.match(pathname) ? 'on' : ''}`}>

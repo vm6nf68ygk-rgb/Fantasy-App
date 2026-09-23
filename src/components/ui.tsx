@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconChevronLeft, IconChevronRight, IconSearch, IconXCircle } from './icons';
 
@@ -40,9 +40,12 @@ export function Page({
         <div className="navbar-inner">
           <div className="navbar-left">
             {back && (
-              <button className="nav-btn" onClick={() => (back === true ? navigate(-1) : navigate(back))}>
+              <button
+                className="nav-btn icon"
+                aria-label="Back"
+                onClick={() => (back === true ? navigate(-1) : navigate(back))}
+              >
                 <IconChevronLeft />
-                <span>Back</span>
               </button>
             )}
             {left}
@@ -111,7 +114,7 @@ export function Row({
   leading?: ReactNode;
   trailing?: ReactNode;
   chevron?: boolean;
-  onClick?: () => void;
+  onClick?: (e: MouseEvent<HTMLElement>) => void;
   href?: string;
   variant?: 'destructive' | 'action' | 'muted';
   className?: string;
@@ -158,8 +161,10 @@ export function Segmented<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
   return (
-    <div className="segmented" role="tablist">
+    <div className="segmented" role="tablist" style={{ '--n': options.length, '--i': index } as CSSProperties}>
+      <span className="segmented-thumb" aria-hidden />
       {options.map((o) => (
         <button
           key={o.value}

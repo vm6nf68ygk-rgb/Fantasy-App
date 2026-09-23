@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { TeamAvatar } from '../components/avatars';
-import { IconArrows, IconCheck, IconPlus } from '../components/icons';
+import { IconArrows, IconCheck, IconChevronLeft, IconPlus, IconXmark } from '../components/icons';
 import { useUI } from '../components/overlays';
 import { Empty, ErrorNote, Page, Row, Section, Segmented, Spinner } from '../components/ui';
 import { formatPoints, pickLabel, POS_NAMES, relativeTime, rosterOf, seasonPoints, teamName } from '../lib/league';
@@ -185,7 +185,7 @@ export function TradeBuilder() {
 
   if (!team || team === state.me.team_id) {
     return (
-      <Page title="New Trade" large={false} left={<button className="nav-btn" onClick={() => navigate(-1)}>Cancel</button>} tabbar={false}>
+      <Page title="New Trade" large={false} left={<button className="nav-btn icon" aria-label="Cancel" onClick={() => navigate(-1)}><IconXmark /></button>} tabbar={false}>
         <Section header="Trade With">
           {state.teams
             .filter((t) => t.id !== state.me.team_id)
@@ -271,7 +271,13 @@ export function TradeBuilder() {
       title={`Trade with ${teamName(state, team)}`}
       large={false}
       tabbar={false}
-      left={<button className="nav-btn" onClick={() => (params.get('team') ? navigate(-1) : setTeam(null))}>{params.get('team') ? 'Cancel' : 'Back'}</button>}
+      left={
+        params.get('team') ? (
+          <button className="nav-btn icon" aria-label="Cancel" onClick={() => navigate(-1)}><IconXmark /></button>
+        ) : (
+          <button className="nav-btn icon" aria-label="Back" onClick={() => setTeam(null)}><IconChevronLeft /></button>
+        )
+      }
       right={<button className="nav-btn bold" disabled={!ready || busy} onClick={submit}>Send</button>}
     >
       <Section header={`You receive (${get.size})`}>{assetList(assets.theirs!, get, setGet)}</Section>

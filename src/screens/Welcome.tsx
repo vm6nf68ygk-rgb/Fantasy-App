@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { IconXmark } from '../components/icons';
 import { useUI } from '../components/overlays';
 import { Page, Section, Spinner } from '../components/ui';
 import { useAction, useLeagueSelection, useSession } from '../data/session';
@@ -124,7 +125,7 @@ export function Welcome({ canGoBack }: { canGoBack?: boolean }) {
       title="Welcome"
       large={false}
       tabbar={false}
-      left={canGoBack ? <button className="nav-btn" onClick={() => navigate(-1)}>Cancel</button> : undefined}
+      left={canGoBack ? <button className="nav-btn icon" aria-label="Cancel" onClick={() => navigate(-1)}><IconXmark /></button> : undefined}
       right={!canGoBack && backend.mode === 'supabase' ? <button className="nav-btn" onClick={() => backend.signOut()}>Sign Out</button> : undefined}
     >
       <div className="hero">
