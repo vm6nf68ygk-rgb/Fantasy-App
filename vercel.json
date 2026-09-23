@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "functions": {
+    "api/**/*.ts": { "maxDuration": 60 }
+  },
+  "crons": [{ "path": "/api/cron/finalize", "schedule": "0 11 * * *" }],
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+}
